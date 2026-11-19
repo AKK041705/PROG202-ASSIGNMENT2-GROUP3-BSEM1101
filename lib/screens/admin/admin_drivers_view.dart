@@ -9,6 +9,8 @@ import '../../widgets/app_card.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/responsive_body.dart';
 import '../../widgets/status_chip.dart';
+import '../../widgets/user_dialogs.dart';
+import '../../core/app_routes.dart';
 
 /// Administrator tab: verify new drivers and see the verified ones.
 class AdminDriversView extends StatelessWidget {
@@ -62,11 +64,14 @@ class _DriverCard extends StatelessWidget {
               Expanded(
                 child: Text(driver.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ),
-              StatusChip(
-                label: driver.verified ? 'Verified' : 'Waiting',
-                textColor: driver.verified ? AppColors.success : AppColors.amber,
-                background: driver.verified ? AppColors.successTint : AppColors.amberTint,
-              ),
+              if (driver.suspended)
+                StatusChip(label: 'Suspended', textColor: Colors.white, background: AppColors.red)
+              else
+                StatusChip(
+                  label: driver.verified ? 'Verified' : 'Waiting',
+                  textColor: driver.verified ? AppColors.success : AppColors.amber,
+                  background: driver.verified ? AppColors.successTint : AppColors.amberTint,
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -74,6 +79,31 @@ class _DriverCard extends StatelessWidget {
           InfoRow('Vehicle', driver.vehicle ?? '-'),
           InfoRow('Plate', driver.plate ?? '-'),
           InfoRow('Phone', driver.phone),
+          if (driver.suspended) InfoRow('Reason', driver.suspendReason),
+          Wrap(
+            spacing: 8,
+            children: [
+              TextButton.icon(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.driverProfile, arguments: driver.username),
+                icon: const Icon(Icons.person_search_outlined),
+                label: const Text('Profile'),
+              ),
+              TextButton.icon(
+                onPressed: () => messageUserDialog(context, driver),
+                icon: const Icon(Icons.mail_outline),
+                label: const Text('Message'),
+              ),
+              TextButton.icon(
+                onPressed: () => toggleSuspendDialog(context, driver),
+                icon: Icon(driver.suspended ? Icons.lock_open : Icons.block,
+                    color: driver.suspended ? AppColors.green : AppColors.red),
+                label: Text(
+                  driver.suspended ? 'Reinstate' : 'Suspend',
+                  style: TextStyle(color: driver.suspended ? AppColors.green : AppColors.red),
+                ),
+              ),
+            ],
+          ),
           if (canVerify) ...[
             const SizedBox(height: 10),
             PrimaryButton(

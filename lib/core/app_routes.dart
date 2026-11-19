@@ -23,7 +23,16 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String about = '/about';
   static const String settings = '/settings';
+  static const String drivers = '/drivers';
+  static const String driverProfile = '/driver-profile';
+  static const String review = '/review';
+  static const String tripMap = '/trip-map';
+  static const String payment = '/payment';
+  static const String receipt = '/receipt';
 
   static const String fareEdit = '/admin/fare-edit';
   static const String reviewReport = '/admin/review-report';
+  static const String adminPassengers = '/admin/passengers';
+  static const String adminRequests = '/admin/requests';
+  static const String socialLogin = '/social-login';
 }

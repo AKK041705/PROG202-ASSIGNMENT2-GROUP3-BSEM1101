@@ -95,6 +95,7 @@ class AdminDashboardView extends StatelessWidget {
                   icon: Icons.hourglass_top,
                   text: 'Requests still waiting for a driver',
                   count: pendingRequests,
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.adminRequests, arguments: 'Pending'),
                 ),
               const SectionTitle('Overview'),
               GridView(
@@ -107,7 +108,12 @@ class AdminDashboardView extends StatelessWidget {
                   mainAxisSpacing: 10,
                 ),
                 children: [
-                  StatCard(label: 'Passengers', value: '$passengers', icon: Icons.people_outline),
+                  StatCard(
+                    label: 'Passengers',
+                    value: '$passengers',
+                    icon: Icons.people_outline,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.adminPassengers),
+                  ),
                   StatCard(
                     label: 'Verified drivers',
                     value: '${drivers.length - waiting}',
@@ -120,8 +126,18 @@ class AdminDashboardView extends StatelessWidget {
                     icon: Icons.payments_outlined,
                     onTap: () => onOpenTab(2),
                   ),
-                  StatCard(label: 'Requests', value: '$totalRequests', icon: Icons.list_alt),
-                  StatCard(label: 'Completed trips', value: '${count(RequestStatus.completed)}', icon: Icons.flag_circle_outlined),
+                  StatCard(
+                    label: 'Requests',
+                    value: '$totalRequests',
+                    icon: Icons.list_alt,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.adminRequests, arguments: 'All'),
+                  ),
+                  StatCard(
+                    label: 'Completed trips',
+                    value: '${count(RequestStatus.completed)}',
+                    icon: Icons.flag_circle_outlined,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.adminRequests, arguments: 'Completed'),
+                  ),
                   StatCard(
                     label: 'Fare reports',
                     value: '${state.reports.length}',

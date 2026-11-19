@@ -1,4 +1,4 @@
-/// Plain data classes used across the app (the "entities" from Assignment 1).
+// Plain data classes used across the app (the "entities" from Assignment 1).
 
 enum UserRole { passenger, driver, administrator }
 
@@ -15,7 +15,13 @@ extension UserRoleText on UserRole {
   }
 }
 
-enum RequestStatus { pending, awaitingPassenger, confirmed, completed, cancelled }
+enum RequestStatus {
+  pending,
+  awaitingPassenger,
+  confirmed,
+  completed,
+  cancelled
+}
 
 extension RequestStatusText on RequestStatus {
   String get label {
@@ -69,6 +75,8 @@ class AppUser {
     this.country = 'Sierra Leone',
     this.darkMode = false,
     this.accentName = 'green',
+    this.suspended = false,
+    this.suspendReason = '',
   })  : currency = currency,
         homeCurrency = currency;
 
@@ -81,6 +89,10 @@ class AppUser {
   final String? vehicle;
   final String? plate;
   bool verified;
+
+  /// The administrator can suspend an account (for example after a serious report).
+  bool suspended;
+  String suspendReason;
 
   /// Currency shown beside prices ('NLe' means leones only).
   String currency;
@@ -171,6 +183,7 @@ class TransportRequest {
     this.payCurrency = 'NLe',
     this.payAmount,
     this.payRate,
+    this.scheduledAt,
   });
 
   final String id;
@@ -189,6 +202,18 @@ class TransportRequest {
   final String payCurrency;
   final double? payAmount;
   final double? payRate;
+
+  /// null means "now"; otherwise the time the passenger wants to travel.
+  final DateTime? scheduledAt;
+
+  DateTime? completedAt;
+
+  bool get isScheduled => scheduledAt != null;
+
+  /// Demo payment: no real money is taken in this prototype.
+  bool paid = false;
+  String? payMethod;
+  DateTime? paidAt;
   RequestStatus status = RequestStatus.pending;
   String? driver;
   final List<String> declinedDrivers = [];
@@ -217,11 +242,52 @@ class FareReport {
 }
 
 class AppNotification {
-  AppNotification({required this.to, required this.text})
+  AppNotification({required this.to, required this.text, this.requestId})
       : time = DateTime.now();
 
   final String to;
   final String text;
+
+  /// When set, tapping the notification opens that request.
+  final String? requestId;
   final DateTime time;
   bool read = false;
+}
+
+/// A passenger's rating and comment about a driver after a completed trip.
+class Review {
+  Review({
+    required this.requestId,
+    required this.driver,
+    required this.passenger,
+    required this.rating,
+    required this.comment,
+  }) : time = DateTime.now();
+
+  final String requestId;
+  final String driver;
+  final String passenger;
+  final int rating; // 1 to 5
+  final String comment;
+  final DateTime time;
+}
+
+/// A report about a driver or a passenger, sent to the administrator.
+class UserReport {
+  UserReport({
+    required this.id,
+    required this.reporter,
+    required this.subject,
+    required this.requestId,
+    required this.text,
+  }) : time = DateTime.now();
+
+  final String id;
+  final String reporter; // username of the person reporting
+  final String subject; // username of the person reported
+  final String requestId;
+  final String text;
+  final DateTime time;
+  bool reviewed = false;
+  String response = '';
 }

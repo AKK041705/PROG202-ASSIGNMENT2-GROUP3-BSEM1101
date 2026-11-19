@@ -14,6 +14,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.1
+  flutter_lints: ^5.0.0
 
 # Creates the app icon for Android and iOS. Run: dart run flutter_launcher_icons
 flutter_launcher_icons:

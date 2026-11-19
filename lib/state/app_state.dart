@@ -22,11 +22,13 @@ class AppState extends ChangeNotifier {
   final List<TransportRequest> requests = [];
   final List<FareReport> reports = [];
   final List<AppNotification> notifications = [];
+  final List<Review> reviews = [];
 
   AppUser? currentUser;
 
   void _seedUsers() {
-    AppUser driver(String user, String name, String type, String vehicle, String plate) {
+    AppUser driver(
+        String user, String name, String type, String vehicle, String plate) {
       return AppUser(
         username: user,
         password: '1234',
@@ -51,7 +53,8 @@ class AppState extends ChangeNotifier {
       driver('kekeh1', 'Sample Rider B', 'Kekeh', 'Tricycle', 'SL-DEMO-02'),
       driver('taxi1', 'Sample Driver C', 'Taxi', 'Saloon car', 'SL-DEMO-03'),
       driver('taxi2', 'Sample Driver D', 'Taxi', 'Saloon car', 'SL-DEMO-04'),
-      driver('van1', 'Sample Driver E', 'Private vehicle', 'Minivan', 'SL-DEMO-05'),
+      driver('van1', 'Sample Driver E', 'Private vehicle', 'Minivan',
+          'SL-DEMO-05'),
       driver('poda1', 'Sample Driver F', 'Poda-poda', 'Minibus', 'SL-DEMO-06'),
       driver('bus1', 'Sample Driver G', 'Bus', 'Coach', 'SL-DEMO-07'),
     ]);
@@ -116,7 +119,8 @@ class AppState extends ChangeNotifier {
         freeSeats: freeSeats,
         fareText: FareService.requestFareText(q, mode, people, freeSeats),
         payCurrency: payCurrency,
-        payAmount: total == null ? null : CurrencyService.amountIn(total, payCurrency),
+        payAmount:
+            total == null ? null : CurrencyService.amountIn(total, payCurrency),
         payRate: CurrencyService.rateFor(payCurrency),
       );
       request.status = status;
@@ -135,6 +139,7 @@ class AppState extends ChangeNotifier {
       status: RequestStatus.confirmed,
       driver: 'kekeh1',
     );
+
     demoRequest(
       passenger: 'mohamed',
       pickup: 'Freetown',
@@ -143,7 +148,8 @@ class AppState extends ChangeNotifier {
       people: 3,
       status: RequestStatus.pending,
     );
-    demoRequest(
+
+    final paidTrip = demoRequest(
       passenger: 'amina',
       pickup: 'Waterloo',
       destination: 'Bombay Street',
@@ -152,6 +158,11 @@ class AppState extends ChangeNotifier {
       status: RequestStatus.completed,
       driver: 'poda1',
     );
+
+    paidTrip.paid = true;
+    paidTrip.payMethod = 'Cash to driver';
+    paidTrip.paidAt = DateTime.now();
+
     demoRequest(
       passenger: 'mohamed',
       pickup: 'Freetown',
@@ -172,6 +183,131 @@ class AppState extends ChangeNotifier {
       payCurrency: 'GBP',
     );
 
+    // Past trips with reviews, so driver profiles have something to show.
+    reviews.add(Review(
+      requestId: paidTrip.id,
+      driver: 'poda1',
+      passenger: 'amina',
+      rating: 5,
+      comment: 'Smooth ride and a fair fare.',
+    ));
+
+    TransportRequest past(
+      String passenger,
+      String pickup,
+      String destination,
+      String mode,
+      int people,
+      String driver,
+      int rating,
+      String comment, {
+      String payCurrency = 'NLe',
+    }) {
+      final trip = demoRequest(
+        passenger: passenger,
+        pickup: pickup,
+        destination: destination,
+        mode: mode,
+        people: people,
+        status: RequestStatus.completed,
+        driver: driver,
+        payCurrency: payCurrency,
+      );
+
+      reviews.add(Review(
+        requestId: trip.id,
+        driver: driver,
+        passenger: passenger,
+        rating: rating,
+        comment: comment,
+      ));
+
+      return trip;
+    }
+
+    past(
+      'mohamed',
+      'Wilberforce',
+      'Imatt',
+      'Kekeh',
+      1,
+      'kekeh1',
+      4,
+      'Quick and polite. Charged the listed fare.',
+    );
+
+    past(
+      'amina',
+      'Lumley',
+      'Freetown',
+      'Taxi (shared)',
+      2,
+      'taxi1',
+      5,
+      'Clean car and a safe driver.',
+    );
+
+    past(
+      'mohamed',
+      'Lumley',
+      'Wilberforce',
+      'Okada',
+      1,
+      'rider1',
+      3,
+      'Okay, but the rider asked for more than the posted fare.',
+    );
+
+    past(
+      'amina',
+      'Freetown',
+      'Makeni',
+      'Bus',
+      2,
+      'bus1',
+      4,
+      'On time and comfortable.',
+    );
+
+    past(
+      'sarah',
+      'Waterloo',
+      'Tokeh',
+      'Poda-poda',
+      1,
+      'poda1',
+      5,
+      'Very helpful. Showed me where to get off.',
+      payCurrency: 'GBP',
+    );
+
+    // A trip booked for tomorrow morning.
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final busQuote = quote('Bus', 'Freetown', 'Makeni');
+
+    requests.add(TransportRequest(
+      id: 'REQ-${requests.length + 1}',
+      passenger: 'amina',
+      pickup: 'Freetown',
+      destination: 'Makeni',
+      mode: 'Bus',
+      people: 2,
+      freeSeats: 0,
+      fareText: FareService.requestFareText(busQuote, 'Bus', 2, 0),
+      payAmount: FareService.requestTotal(busQuote, 'Bus', 2, 0),
+      scheduledAt: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 7, 0),
+    ));
+
+    // Completed demo trips get a completion time (some days ago).
+    var daysAgo = 1;
+
+    for (final r in requests) {
+      if (r.status == RequestStatus.completed) {
+        r.completedAt ??= DateTime.now().subtract(Duration(days: daysAgo));
+        daysAgo += 1;
+      }
+    }
+
     final first = FareReport(
       id: 'RPT-1',
       passenger: 'amina',
@@ -181,6 +317,7 @@ class AppState extends ChangeNotifier {
       note: 'The rider asked for more than the posted pole-to-pole fare.',
       systemFare: 'NLe 7.0 [Official price list]',
     );
+
     final second = FareReport(
       id: 'RPT-2',
       passenger: 'mohamed',
@@ -190,12 +327,17 @@ class AppState extends ChangeNotifier {
       note: 'The conductor asked for a higher fare.',
       systemFare: 'NLe 14.7 [Published sample (news)]',
     );
+
     second.status = ReportStatus.closed;
-    second.response = 'Checked against the current fare list. Thank you for reporting.';
+    second.response =
+        'Checked against the current fare list. Thank you for reporting.';
+
     reports.addAll([first, second]);
 
-    notify('admin', 'New fare issue report RPT-1 (Lumley -> Wilberforce, Okada).');
-    notify('admin', 'New driver registered: Sample Rider H (kekeh2). Verification needed.');
+    notify(
+        'admin', 'New fare issue report RPT-1 (Lumley -> Wilberforce, Okada).');
+    notify('admin',
+        'New driver registered: Sample Rider H (kekeh2). Verification needed.');
     notify('amina', 'REQ-3: your trip was marked as completed.');
     notify('mohamed',
         'REQ-4: Sample Driver C accepted your request. Open it to accept or reject this driver.');
@@ -216,13 +358,25 @@ class AppState extends ChangeNotifier {
       findUser(username.trim().toLowerCase()) != null;
 
   /// Returns the user when the details are right, otherwise null.
+  /// Why the last login failed (shown on the login screen).
+  String? loginError;
+
   AppUser? login(String username, String password) {
+    loginError = null;
     final user = findUser(username.trim().toLowerCase());
+
     if (user != null && user.password == password) {
+      if (user.suspended) {
+        loginError =
+            'This account is suspended. Reason: ${user.suspendReason}. Contact the administrator.';
+        return null;
+      }
+
       currentUser = user;
       notifyListeners();
       return user;
     }
+
     return null;
   }
 
@@ -230,6 +384,17 @@ class AppState extends ChangeNotifier {
   void setUserCurrency(String code) {
     currentUser?.currency = code;
     notifyListeners();
+  }
+
+  /// Demo sign-in used by the Google, Apple and Facebook buttons (no real sign-in yet).
+  AppUser? loginAsDemo(String username) {
+    final user = findUser(username);
+
+    if (user == null || user.suspended) return null;
+
+    currentUser = user;
+    notifyListeners();
+    return user;
   }
 
   void logout() {
@@ -250,6 +415,7 @@ class AppState extends ChangeNotifier {
     final isDriver = role == UserRole.driver;
     final phoneInfo = PhoneService.parse(phone);
     final country = phoneInfo.country;
+
     final user = AppUser(
       username: username.trim().toLowerCase(),
       password: password,
@@ -263,13 +429,16 @@ class AppState extends ChangeNotifier {
       currency: country?.currency ?? 'USD',
       country: country?.name ?? 'Overseas',
     );
+
     users.add(user);
+
     if (isDriver) {
       notifyRole(
         UserRole.administrator,
         'New driver registered: ${user.name} (${user.username}). Verification needed.',
       );
     }
+
     notifyListeners();
     return user;
   }
@@ -288,14 +457,19 @@ class AppState extends ChangeNotifier {
 
   void verifyDriver(AppUser driver) {
     driver.verified = true;
-    notify(driver.username, 'Your driver account has been verified. You can now receive requests.');
+    notify(
+      driver.username,
+      'Your driver account has been verified. You can now receive requests.',
+    );
     notifyListeners();
   }
 
   // -------------------------------------------------------- notifications
 
-  void notify(String to, String text) {
-    notifications.add(AppNotification(to: to, text: text));
+  void notify(String to, String text, {String? requestId}) {
+    // A notification that starts with a request number opens that request.
+    final id = requestId ?? RegExp(r'^(REQ-\d+)').firstMatch(text)?.group(1);
+    notifications.add(AppNotification(to: to, text: text, requestId: id));
   }
 
   void notifyRole(UserRole role, String text) {
@@ -305,7 +479,11 @@ class AppState extends ChangeNotifier {
   }
 
   List<AppNotification> notificationsFor(String username) {
-    return notifications.where((n) => n.to == username).toList().reversed.toList();
+    return notifications
+        .where((n) => n.to == username)
+        .toList()
+        .reversed
+        .toList();
   }
 
   int unreadCount(String username) {
@@ -314,12 +492,14 @@ class AppState extends ChangeNotifier {
 
   void markAllRead(String username) {
     var changed = false;
+
     for (final n in notifications) {
       if (n.to == username && !n.read) {
         n.read = true;
         changed = true;
       }
     }
+
     if (changed) notifyListeners();
   }
 
@@ -343,11 +523,13 @@ class AppState extends ChangeNotifier {
     Tariff? existing,
   }) {
     Tariff? target = existing;
+
     if (target == null) {
       for (final t in tariffs) {
         if (t.mode == mode && t.matches(from, to)) target = t;
       }
     }
+
     if (target != null) {
       target.fare = fare;
       target.source = 'Administrator update';
@@ -360,16 +542,22 @@ class AppState extends ChangeNotifier {
         source: 'Administrator update',
       ));
     }
-    notifyRole(UserRole.passenger,
-        'Fare update: $mode $from <-> $to is now ${FareService.money(fare)}.');
+
+    notifyRole(
+      UserRole.passenger,
+      'Fare update: $mode $from <-> $to is now ${FareService.money(fare)}.',
+    );
     notifyListeners();
   }
 
   void updateFlatFare(Tariff flat, double fare) {
     flat.fare = fare;
     flat.source = 'Administrator update';
-    notifyRole(UserRole.passenger,
-        'Fare update: ${flat.mode} pole-to-pole fare is now ${FareService.money(fare)}.');
+
+    notifyRole(
+      UserRole.passenger,
+      'Fare update: ${flat.mode} pole-to-pole fare is now ${FareService.money(fare)}.',
+    );
     notifyListeners();
   }
 
@@ -392,6 +580,7 @@ class AppState extends ChangeNotifier {
     String note = '',
     String payCurrency = 'NLe',
     double? payAmount,
+    DateTime? scheduledAt,
   }) {
     final request = TransportRequest(
       id: 'REQ-${requests.length + 1}',
@@ -406,7 +595,9 @@ class AppState extends ChangeNotifier {
       payCurrency: payCurrency,
       payAmount: payAmount,
       payRate: CurrencyService.rateFor(payCurrency),
+      scheduledAt: scheduledAt,
     );
+
     requests.add(request);
     notifyListeners();
     return request;
@@ -417,8 +608,9 @@ class AppState extends ChangeNotifier {
 
   /// Pending requests a verified driver of the matching type can see.
   List<TransportRequest> incomingFor(AppUser driver) {
-    if (!driver.verified) return [];
-    return requests
+    if (!driver.verified || driver.suspended) return [];
+
+    final open = requests
         .where((r) =>
             r.status == RequestStatus.pending &&
             FareService.driverTypeFor(r.mode) == driver.driverType &&
@@ -426,6 +618,9 @@ class AppState extends ChangeNotifier {
         .toList()
         .reversed
         .toList();
+
+    // Newest requests appear first.
+    return open;
   }
 
   List<TransportRequest> tripsOfDriver(String username) =>
@@ -434,8 +629,11 @@ class AppState extends ChangeNotifier {
   void driverAccept(TransportRequest r, AppUser driver) {
     r.driver = driver.username;
     r.status = RequestStatus.awaitingPassenger;
-    notify(r.passenger,
-        '${r.id}: ${driver.name} accepted your request. Open it to accept or reject this driver.');
+
+    notify(
+      r.passenger,
+      '${r.id}: ${driver.name} accepted your request. Open it to accept or reject this driver.',
+    );
     notifyListeners();
   }
 
@@ -446,19 +644,25 @@ class AppState extends ChangeNotifier {
 
   void passengerAcceptDriver(TransportRequest r) {
     r.status = RequestStatus.confirmed;
+
     if (r.driver != null) {
       notify(r.driver!, '${r.id}: the passenger accepted you. Trip confirmed.');
     }
+
     notifyListeners();
   }
 
   void passengerRejectDriver(TransportRequest r) {
     final driverName = r.driver;
+
     if (driverName != null) {
       r.declinedDrivers.add(driverName);
-      notify(driverName,
-          '${r.id}: the passenger rejected you. The request is open to other drivers.');
+      notify(
+        driverName,
+        '${r.id}: the passenger rejected you. The request is open to other drivers.',
+      );
     }
+
     r.driver = null;
     r.status = RequestStatus.pending;
     notifyListeners();
@@ -466,9 +670,24 @@ class AppState extends ChangeNotifier {
 
   void cancelRequest(TransportRequest r) {
     r.status = RequestStatus.cancelled;
+
     if (r.driver != null) {
       notify(r.driver!, '${r.id}: the passenger cancelled the request.');
     }
+
+    notifyListeners();
+  }
+
+  /// Records a demo payment and tells the driver.
+  void payRequest(TransportRequest r, String method) {
+    r.paid = true;
+    r.payMethod = method;
+    r.paidAt = DateTime.now();
+
+    if (r.driver != null) {
+      notify(r.driver!, '${r.id}: payment received ($method, demo).');
+    }
+
     notifyListeners();
   }
 
@@ -476,6 +695,59 @@ class AppState extends ChangeNotifier {
     r.status = RequestStatus.completed;
     notify(r.passenger, '${r.id}: your trip was marked as completed.');
     notifyListeners();
+  }
+
+  // --------------------------------------------------------------- reviews
+
+  Review? reviewOfRequest(String requestId) {
+    for (final r in reviews) {
+      if (r.requestId == requestId) return r;
+    }
+    return null;
+  }
+
+  /// A driver's reviews, newest first.
+  List<Review> reviewsForDriver(String username) =>
+      reviews.where((r) => r.driver == username).toList().reversed.toList();
+
+  /// Average stars for a driver, or null when there are no reviews yet.
+  double? averageRating(String username) {
+    final list = reviews.where((r) => r.driver == username).toList();
+
+    if (list.isEmpty) return null;
+
+    final total = list.fold<int>(0, (sum, r) => sum + r.rating);
+    return total / list.length;
+  }
+
+  int completedTripsOf(String username) => requests
+      .where((r) => r.driver == username && r.status == RequestStatus.completed)
+      .length;
+
+  /// Saves a review for a completed trip (one review per trip).
+  Review? addReview(TransportRequest request, int rating, String comment) {
+    final driverName = request.driver;
+
+    if (driverName == null || request.status != RequestStatus.completed) {
+      return null;
+    }
+
+    if (reviewOfRequest(request.id) != null) {
+      return null;
+    }
+
+    final review = Review(
+      requestId: request.id,
+      driver: driverName,
+      passenger: request.passenger,
+      rating: rating,
+      comment: comment.trim(),
+    );
+
+    reviews.add(review);
+    notify(driverName, '${request.id}: you received a $rating-star review.');
+    notifyListeners();
+    return review;
   }
 
   // --------------------------------------------------------------- reports
@@ -497,9 +769,14 @@ class AppState extends ChangeNotifier {
       note: note.trim().isEmpty ? 'No description' : note.trim(),
       systemFare: systemFare,
     );
+
     reports.add(report);
-    notifyRole(UserRole.administrator,
-        'New fare issue report ${report.id} (${report.route}, $mode).');
+
+    notifyRole(
+      UserRole.administrator,
+      'New fare issue report ${report.id} (${report.route}, $mode).',
+    );
+
     notifyListeners();
     return report;
   }
@@ -517,8 +794,141 @@ class AppState extends ChangeNotifier {
   void reviewReport(FareReport report, ReportStatus status, String message) {
     report.status = status;
     report.response = message.trim();
-    notify(report.passenger,
-        'Report ${report.id} is now: ${status.label}. ${report.response}'.trim());
+
+    notify(
+      report.passenger,
+      'Report ${report.id} is now: ${status.label}. ${report.response}'.trim(),
+    );
+
+    notifyListeners();
+  }
+
+  // ------------------------------------------------- administrator actions
+
+  /// Sends a message that shows up as a notification for the other person.
+  void sendMessage(AppUser admin, String to, String text) {
+    notify(
+      to,
+      'Message from the administrator (${admin.name}): ${text.trim()}',
+    );
+
+    notifyListeners();
+  }
+
+  /// Blocks an account from logging in. Open trips are handed back to other drivers.
+  void suspendUser(AppUser user, String reason) {
+    user.suspended = true;
+    user.suspendReason = reason.trim();
+
+    notify(
+      user.username,
+      'Your account was suspended. Reason: ${user.suspendReason}.',
+    );
+
+    for (final r in requests) {
+      if (r.driver == user.username &&
+          (r.status == RequestStatus.awaitingPassenger ||
+              r.status == RequestStatus.confirmed)) {
+        r.declinedDrivers.add(user.username);
+        r.driver = null;
+        r.status = RequestStatus.pending;
+
+        notify(
+          r.passenger,
+          '${r.id}: your driver is no longer available. Your request is Pending again.',
+        );
+      }
+
+      if (r.passenger == user.username && r.status.isActive) {
+        r.status = RequestStatus.cancelled;
+
+        if (r.driver != null) {
+          notify(
+            r.driver!,
+            '${r.id}: the request was cancelled by the administrator.',
+          );
+        }
+      }
+    }
+
+    notifyListeners();
+  }
+
+  void reinstateUser(AppUser user) {
+    user.suspended = false;
+    user.suspendReason = '';
+
+    notify(user.username, 'Your account has been reinstated. Welcome back.');
+    notifyListeners();
+  }
+
+  List<AppUser> get passengers =>
+      users.where((u) => u.role == UserRole.passenger).toList();
+
+  // ------------------------------------------------------- reports about users
+
+  final List<UserReport> userReports = [];
+
+  /// A driver reports a passenger, or a passenger reports a driver.
+  UserReport reportUser({
+    required AppUser reporter,
+    required String subject,
+    required String requestId,
+    required String text,
+  }) {
+    final report = UserReport(
+      id: 'UR-${userReports.length + 1}',
+      reporter: reporter.username,
+      subject: subject,
+      requestId: requestId,
+      text: text.trim(),
+    );
+
+    userReports.add(report);
+
+    final about = findUser(subject)?.name ?? subject;
+
+    notifyRole(
+      UserRole.administrator,
+      'New report ${report.id} from ${reporter.name} about $about ($requestId).',
+    );
+
+    notify(
+      reporter.username,
+      'Your report ${report.id} was sent to the administrator.',
+    );
+
+    notifyListeners();
+    return report;
+  }
+
+  void reviewUserReport(UserReport report, String response) {
+    report.reviewed = true;
+    report.response = response.trim();
+
+    notify(
+      report.reporter,
+      'Report ${report.id} was reviewed by the administrator. ${report.response}'
+          .trim(),
+    );
+
+    notifyListeners();
+  }
+
+  /// A driver cancels a trip they accepted. The passenger is told and the request
+  /// goes back to Pending for other drivers.
+  void driverCancel(TransportRequest r, AppUser driver) {
+    if (r.driver != driver.username) return;
+
+    r.declinedDrivers.add(driver.username);
+    r.driver = null;
+    r.status = RequestStatus.pending;
+
+    notify(
+      r.passenger,
+      '${r.id}: ${driver.name} cancelled the trip. Your request is Pending again so another driver can accept it.',
+    );
+
     notifyListeners();
   }
 }
