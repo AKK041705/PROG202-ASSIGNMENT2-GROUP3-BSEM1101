@@ -47,6 +47,7 @@ class _PassengerShellState extends State<PassengerShell> {
           drawer: const AppDrawer(
             items: [
               DrawerItem('Request transportation', Icons.directions_car, AppRoutes.requestTransport),
+              DrawerItem('Find drivers', Icons.people_outline, AppRoutes.drivers),
               DrawerItem('Compare transportation', Icons.compare_arrows, AppRoutes.compare),
               DrawerItem('Report a fare issue', Icons.flag_outlined, AppRoutes.reportFare),
               DrawerItem('My fare reports', Icons.assignment_outlined, AppRoutes.myReports),

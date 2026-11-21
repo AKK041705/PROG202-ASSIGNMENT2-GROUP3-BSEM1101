@@ -14,6 +14,7 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/app_top_bar.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/responsive_body.dart';
+import '../../widgets/social_sign_in.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -205,6 +206,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                   child: const Text('Already have an account? Log in'),
                 ),
+                const SizedBox(height: 8),
+                const SocialSignInRow(heading: 'Or sign up with'),
               ],
             ),
           ),

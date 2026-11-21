@@ -56,8 +56,27 @@ class CurrencyService {
   static String paymentText(String code, double? amount) {
     if (amount == null) return 'To be agreed with the driver';
     if (code == 'NLe') return money(amount, code);
-    return '${money(amount, code)} (paid in $code, not converted to leones)';
+    return '${money(amount, code)} (paid in ${shortName(code)}, not converted to leones)';
   }
+
+  /// Plain name of a currency so people know what "USD" or "CNY" means.
+  static String shortName(String code) {
+    switch (code) {
+      case 'USD':
+        return 'US dollar';
+      case 'EUR':
+        return 'Euro';
+      case 'GBP':
+        return 'British pound';
+      case 'CNY':
+        return 'Chinese yuan';
+      default:
+        return 'New leone';
+    }
+  }
+
+  /// e.g. "USD - US dollar".
+  static String label(String code) => '$code - ${shortName(code)}';
 
   /// Converts a leone amount, or null when no other currency is chosen.
   static double? convert(double nle, String code) {
@@ -71,6 +90,6 @@ class CurrencyService {
     if (nle == null) return null;
     final value = convert(nle, code);
     if (value == null) return null;
-    return 'about $code ${value.toStringAsFixed(2)}';
+    return 'about $code ${value.toStringAsFixed(2)} (${shortName(code)})';
   }
 }

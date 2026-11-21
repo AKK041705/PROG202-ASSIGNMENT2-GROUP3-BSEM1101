@@ -97,7 +97,7 @@ class SettingsScreen extends StatelessWidget {
                           children: [
                             for (final code in CurrencyService.options)
                               ChoiceChip(
-                                label: Text(code),
+                                label: Text(code == 'NLe' ? 'NLe only' : CurrencyService.label(code)),
                                 selected: prefs.currency == code,
                                 selectedColor: AppColors.green,
                                 backgroundColor: AppColors.surface,

@@ -12,6 +12,7 @@ import '../../widgets/app_card.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/app_top_bar.dart';
 import '../../widgets/logo_widgets.dart';
+import '../../widgets/social_sign_in.dart';
 import '../../widgets/responsive_body.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     final user = AppState.instance.login(_usernameController.text, _passwordController.text);
     if (user == null) {
-      showMessage(context, 'Wrong username or password', error: true);
+      showMessage(context, AppState.instance.loginError ?? 'Wrong username or password', error: true);
       return;
     }
     Session.afterLogin(user);
@@ -107,6 +108,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('No account yet? Create one'),
                 ),
                 const SizedBox(height: 12),
+                const SocialSignInRow(heading: 'Or log in with'),
+                const SizedBox(height: 16),
                 AppCard(
                   color: AppColors.blueTint,
                   borderColor: AppColors.blueTint,

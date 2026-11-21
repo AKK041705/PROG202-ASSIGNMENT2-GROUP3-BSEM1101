@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_colors.dart';
+import '../../core/app_routes.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_top_bar.dart';
@@ -54,6 +55,9 @@ class NotificationsView extends StatelessWidget {
                       for (final n in items)
                         AppCard(
                           margin: const EdgeInsets.only(bottom: 10),
+                          onTap: n.requestId != null && state.requestById(n.requestId!) != null
+                              ? () => Navigator.pushNamed(context, AppRoutes.requestDetails, arguments: n.requestId)
+                              : null,
                           color: n.read ? AppColors.surface : AppColors.greenTint,
                           borderColor: n.read ? AppColors.border : AppColors.greenTint,
                           child: Row(

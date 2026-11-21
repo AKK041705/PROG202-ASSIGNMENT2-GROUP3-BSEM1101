@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_colors.dart';
+import '../core/date_format.dart';
 import '../models/models.dart';
 import 'app_card.dart';
 import 'fare_tile.dart';
@@ -54,8 +55,21 @@ class RequestCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              StatusChip.request(request.status),
-              const Spacer(),
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    StatusChip.request(request.status),
+                    if (request.isScheduled)
+                      StatusChip(
+                        label: DateText.when(request.scheduledAt!),
+                        textColor: AppColors.info,
+                        background: AppColors.infoTint,
+                      ),
+                  ],
+                ),
+              ),
               Icon(Icons.chevron_right, color: AppColors.textSecondary),
             ],
           ),

@@ -12,6 +12,7 @@ import '../../widgets/common_widgets.dart';
 import '../../widgets/fare_tile.dart';
 import '../../widgets/request_card.dart';
 import '../../widgets/responsive_body.dart';
+import '../../widgets/trip_stepper.dart';
 
 /// Home tab: greeting, summary, quick actions, popular routes and the latest request.
 class PassengerHomeView extends StatelessWidget {
@@ -35,7 +36,8 @@ class PassengerHomeView extends StatelessWidget {
         final user = state.currentUser!;
         final unread = state.unreadCount(user.username);
         final mine = state.requestsOfPassenger(user.username);
-        final active = mine.where((r) => r.status.isActive).length;
+        final activeList = mine.where((r) => r.status.isActive).toList();
+        final active = activeList.length;
         final completed = mine.where((r) => r.status == RequestStatus.completed).length;
         final reports = state.reportsOfPassenger(user.username).length;
         final currency = AppPreferences.instance.currency;
@@ -71,6 +73,27 @@ class PassengerHomeView extends StatelessWidget {
                   ],
                 ),
               ),
+              if (activeList.isNotEmpty) ...[
+                const SectionTitle('Current trip'),
+                AppCard(
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.requestDetails, arguments: activeList.first.id),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${activeList.first.pickup} to ${activeList.first.destination}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        '${activeList.first.id}  |  ${activeList.first.mode}',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      ),
+                      const SizedBox(height: 14),
+                      TripStepper(status: activeList.first.status),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -80,6 +103,41 @@ class PassengerHomeView extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(child: MiniStat(label: 'Fare reports', value: '$reports', icon: Icons.flag_outlined)),
                 ],
+              ),
+              const SectionTitle('Choose a vehicle'),
+              SizedBox(
+                height: 104,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final vehicle in FareService.seatCapacity.keys)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: SizedBox(
+                          width: 96,
+                          child: AppCard(
+                            padding: const EdgeInsets.all(8),
+                            // The vehicle type is passed to the request screen.
+                            onTap: () => Navigator.pushNamed(context, AppRoutes.requestTransport, arguments: vehicle),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(modeIcon(vehicle), color: AppColors.green, size: 30),
+                                const SizedBox(height: 6),
+                                Text(
+                                  vehicle,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SectionTitle('Quick actions'),
               GridView(
@@ -116,6 +174,11 @@ class PassengerHomeView extends StatelessWidget {
                     label: 'My reports',
                     icon: Icons.assignment_outlined,
                     onTap: () => Navigator.pushNamed(context, AppRoutes.myReports),
+                  ),
+                  ActionTile(
+                    label: 'Find drivers',
+                    icon: Icons.people_outline,
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.drivers),
                   ),
                   ActionTile(
                     label: 'Notifications',

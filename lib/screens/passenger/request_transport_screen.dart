@@ -14,6 +14,7 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/app_top_bar.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/fare_tile.dart';
+import '../../widgets/date_time_picker_field.dart';
 import '../../widgets/place_picker_field.dart';
 import '../../widgets/quantity_stepper.dart';
 import '../../widgets/responsive_body.dart';
@@ -21,7 +22,10 @@ import '../../widgets/responsive_body.dart';
 /// Form for requesting a ride: route, vehicle type, number of people and how
 /// many extra seats to keep free. Shows the estimated fare as the form changes.
 class RequestTransportScreen extends StatefulWidget {
-  const RequestTransportScreen({super.key});
+  const RequestTransportScreen({super.key, this.initialMode});
+
+  /// Optional vehicle type chosen on the home screen.
+  final String? initialMode;
 
   @override
   State<RequestTransportScreen> createState() => _RequestTransportScreenState();
@@ -33,10 +37,12 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
 
   String? _pickup;
   String? _destination;
-  String? _mode;
+  late String? _mode = widget.initialMode;
   int _people = 1;
   int _freeSeats = 0;
   late String _payCurrency = AppPreferences.instance.currency;
+  bool _scheduled = false;
+  DateTime? _when;
 
   @override
   void dispose() {
@@ -63,6 +69,16 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
       showMessage(context, quote.unavailableReason ?? 'This option is not available', error: true);
       return;
     }
+    if (_scheduled) {
+      if (_when == null) {
+        showMessage(context, 'Choose the date and time for your trip', error: true);
+        return;
+      }
+      if (_when!.isBefore(DateTime.now().add(const Duration(minutes: 10)))) {
+        showMessage(context, 'Choose a time at least 10 minutes from now', error: true);
+        return;
+      }
+    }
     final total = FareService.requestTotal(quote, _mode!, _people, _perSeat ? _freeSeats : 0);
     final request = state.createRequest(
       pickup: _pickup!,
@@ -74,6 +90,7 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
       note: _noteController.text.trim(),
       payCurrency: _payCurrency,
       payAmount: total == null ? null : CurrencyService.amountIn(total, _payCurrency),
+      scheduledAt: _scheduled ? _when : null,
     );
     showMessage(context, 'Request ${request.id} sent. Waiting for a driver.');
     // Replace this form with the details screen of the new request.
@@ -156,6 +173,48 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                   else if (!_perSeat)
                     const NoteBox(text: 'This is a private trip. The whole vehicle is yours for one fare.'),
                 ],
+                const SectionTitle('When do you need it?'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Center(child: Text('Now')),
+                        selected: !_scheduled,
+                        showCheckmark: false,
+                        selectedColor: AppColors.green,
+                        backgroundColor: AppColors.surface,
+                        labelStyle: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: !_scheduled ? Colors.white : AppColors.textPrimary,
+                        ),
+                        onSelected: (_) => setState(() => _scheduled = false),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Center(child: Text('Choose a time')),
+                        selected: _scheduled,
+                        showCheckmark: false,
+                        selectedColor: AppColors.green,
+                        backgroundColor: AppColors.surface,
+                        labelStyle: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: _scheduled ? Colors.white : AppColors.textPrimary,
+                        ),
+                        onSelected: (_) => setState(() => _scheduled = true),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_scheduled) ...[
+                  const SizedBox(height: 12),
+                  DateTimePickerField(
+                    label: 'Pickup date and time',
+                    value: _when,
+                    onChanged: (v) => setState(() => _when = v),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 // A plain TextField (outside validation) for an optional note.
                 TextField(
@@ -181,9 +240,9 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                     AppDropdown(
                       label: 'Pay in',
                       icon: Icons.payments_outlined,
-                      value: _payCurrency,
-                      items: CurrencyService.acceptedPayments,
-                      onChanged: (v) => setState(() => _payCurrency = v ?? 'NLe'),
+                      value: CurrencyService.label(_payCurrency),
+                      items: [for (final c in CurrencyService.acceptedPayments) CurrencyService.label(c)],
+                      onChanged: (v) => setState(() => _payCurrency = (v ?? 'NLe').split(' ').first),
                     ),
                     const SizedBox(height: 10),
                     _PaymentCard(
@@ -248,7 +307,7 @@ class _PaymentCard extends StatelessWidget {
           Text(
             currency == 'NLe'
                 ? 'Paid in leones.'
-                : 'Recorded in $currency and not converted to leones by the app. Indicative rate: 1 $currency = NLe ${CurrencyService.rateFor(currency).toStringAsFixed(2)}.',
+                : 'Recorded in ${CurrencyService.shortName(currency)} ($currency) and not converted to leones by the app. Indicative rate: 1 $currency = NLe ${CurrencyService.rateFor(currency).toStringAsFixed(2)}.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
           ),
           const SizedBox(height: 10),

@@ -77,6 +77,14 @@ class ProfileView extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 20),
+              if (user.role == UserRole.driver) ...[
+                SecondaryButton(
+                  label: 'My public profile and reviews',
+                  icon: Icons.star_outline,
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.driverProfile, arguments: user.username),
+                ),
+                const SizedBox(height: 12),
+              ],
               SecondaryButton(
                 label: 'Settings: theme and currency',
                 icon: Icons.settings_outlined,

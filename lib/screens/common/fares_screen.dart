@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_colors.dart';
+import '../../core/app_preferences.dart';
+import '../../services/currency_service.dart';
 import '../../data/fare_service.dart';
 import '../../state/app_state.dart';
 import '../../widgets/app_buttons.dart';
@@ -123,6 +125,15 @@ class _FaresViewState extends State<FaresView> {
                 const NoteBox(
                   text: 'The app does not rank options. A cheaper mode may offer a different level of service.',
                 ),
+                if (AppPreferences.instance.currency != 'NLe') ...[
+                  const SizedBox(height: 10),
+                  NoteBox(
+                    text: 'Amounts marked "about ${AppPreferences.instance.currency}" are in '
+                        '${CurrencyService.shortName(AppPreferences.instance.currency)} and are only a guide. '
+                        'Real prices are set in leones (NLe).',
+                    icon: Icons.currency_exchange,
+                  ),
+                ],
                 const SizedBox(height: 10),
                 NoteBox(
                   text: _disclaimer,
