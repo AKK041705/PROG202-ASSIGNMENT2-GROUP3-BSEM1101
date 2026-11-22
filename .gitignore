@@ -1,35 +1,81 @@
-# Flutter and Dart
+# Dart and Flutter
 .dart_tool/
 .packages
-.pub-cache/
 .pub/
+.pub-cache/
 build/
 .flutter-plugins
 .flutter-plugins-dependencies
-**/doc/api/
+.flutter-plugins-dependencies.json
+.flutter-version
+coverage/
+doc/api/
 
-# Editors
-.idea/
-*.iml
-*.ipr
-*.iws
-.vscode/
+# Flutter generated files
+flutter/ephemeral/
+**/Flutter/ephemeral/
+**/ephemeral/
 
 # Android
-**/android/.gradle
-**/android/captures/
-**/android/local.properties
-**/android/key.properties
-**/android/**/gradle-wrapper.jar
+/android/local.properties
+/android/key.properties
+/android/.gradle/
+/android/captures/
+/android/.cxx/
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
 *.jks
+*.keystore
 
-# iOS and macOS
-**/ios/Pods/
-**/ios/**/xcuserdata/
-**/ios/Flutter/ephemeral/
-**/macos/Pods/
+# iOS
+/ios/Flutter/.last_build_id
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/ServiceDefinitions.json
+/ios/Runner/GeneratedPluginRegistrant.*
 
-# Misc
-*.log
-*.class
+# macOS
+/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows
+windows/flutter/ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.idea/
+*.iml
+*.swp
+*.swo
+.vscode/*.log
+
+# Operating system files
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Log files
+*.log
+
+# Visual Studio user-specific files.
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio build-related files.
+x64/
+x86/
+
+# Visual Studio cache files
+# files ending in .cache can be ignored
+*.[Cc]ache
+# but keep track of directories ending in .cache
+!*.[Cc]ache/
