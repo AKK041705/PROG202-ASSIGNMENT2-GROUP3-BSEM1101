@@ -508,8 +508,21 @@ class AppState extends ChangeNotifier {
 
   // ----------------------------------------------------------------- fares
 
-  FareQuote quote(String mode, String a, String b) =>
-      FareService.quote(tariffs, mode, a, b);
+  FareQuote quote(
+    String mode,
+    String a,
+    String b, {
+    String? pickupAnchor,
+    String? destinationAnchor,
+  }) =>
+      FareService.quote(
+        tariffs,
+        mode,
+        a,
+        b,
+        pickupAnchor: pickupAnchor,
+        destinationAnchor: destinationAnchor,
+      );
 
   List<Tariff> tariffsForMode(String mode) =>
       tariffs.where((t) => t.mode == mode).toList();

@@ -10,6 +10,13 @@ class Place {
   bool get isWesternArea => area == 'City' || area == 'Peninsula';
 }
 
+class CustomPlaceSelection {
+  const CustomPlaceSelection({required this.name, required this.anchorName});
+
+  final String name;
+  final String anchorName;
+}
+
 const List<Place> kPlaces = [
   // Freetown city
   Place('Freetown', 'City', 0),

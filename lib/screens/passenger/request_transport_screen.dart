@@ -37,6 +37,8 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
 
   String? _pickup;
   String? _destination;
+  String? _pickupAnchor;
+  String? _destinationAnchor;
   late String? _mode = widget.initialMode;
   int _people = 1;
   int _freeSeats = 0;
@@ -64,46 +66,72 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final state = AppState.instance;
-    final quote = state.quote(_mode!, _pickup!, _destination!);
+    final quote = state.quote(
+      _mode!,
+      _pickup!,
+      _destination!,
+      pickupAnchor: _pickupAnchor,
+      destinationAnchor: _destinationAnchor,
+    );
     if (!quote.isAvailable) {
-      showMessage(context, quote.unavailableReason ?? 'This option is not available', error: true);
+      showMessage(
+          context, quote.unavailableReason ?? 'This option is not available',
+          error: true);
       return;
     }
     if (_scheduled) {
       if (_when == null) {
-        showMessage(context, 'Choose the date and time for your trip', error: true);
+        showMessage(context, 'Choose the date and time for your trip',
+            error: true);
         return;
       }
       if (_when!.isBefore(DateTime.now().add(const Duration(minutes: 10)))) {
-        showMessage(context, 'Choose a time at least 10 minutes from now', error: true);
+        showMessage(context, 'Choose a time at least 10 minutes from now',
+            error: true);
         return;
       }
     }
-    final total = FareService.requestTotal(quote, _mode!, _people, _perSeat ? _freeSeats : 0);
+    final total = FareService.requestTotal(
+        quote, _mode!, _people, _perSeat ? _freeSeats : 0);
     final request = state.createRequest(
       pickup: _pickup!,
       destination: _destination!,
       mode: _mode!,
       people: _people,
       freeSeats: _perSeat ? _freeSeats : 0,
-      fareText: FareService.requestFareText(quote, _mode!, _people, _perSeat ? _freeSeats : 0),
+      fareText: FareService.requestFareText(
+          quote, _mode!, _people, _perSeat ? _freeSeats : 0),
       note: _noteController.text.trim(),
       payCurrency: _payCurrency,
-      payAmount: total == null ? null : CurrencyService.amountIn(total, _payCurrency),
+      payAmount:
+          total == null ? null : CurrencyService.amountIn(total, _payCurrency),
       scheduledAt: _scheduled ? _when : null,
     );
     showMessage(context, 'Request ${request.id} sent. Waiting for a driver.');
     // Replace this form with the details screen of the new request.
-    Navigator.pushReplacementNamed(context, AppRoutes.requestDetails, arguments: request.id);
+    Navigator.pushReplacementNamed(context, AppRoutes.requestDetails,
+        arguments: request.id);
   }
 
   @override
   Widget build(BuildContext context) {
     final state = AppState.instance;
-    final ready = _pickup != null && _destination != null && _pickup != _destination && _mode != null;
-    final quote = ready ? state.quote(_mode!, _pickup!, _destination!) : null;
+    final ready = _pickup != null &&
+        _destination != null &&
+        _pickup != _destination &&
+        _mode != null;
+    final quote = ready
+        ? state.quote(
+            _mode!,
+            _pickup!,
+            _destination!,
+            pickupAnchor: _pickupAnchor,
+            destinationAnchor: _destinationAnchor,
+          )
+        : null;
     final driverType = _mode == null ? null : FareService.driverTypeFor(_mode!);
-    final drivers = driverType == null ? 0 : state.countVerifiedDrivers(driverType);
+    final drivers =
+        driverType == null ? 0 : state.countVerifiedDrivers(driverType);
 
     return Scaffold(
       appBar: const AppTopBar(title: 'Request transportation'),
@@ -119,14 +147,22 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                   label: 'Pickup',
                   value: _pickup,
                   icon: Icons.trip_origin,
+                  allowCustom: true,
                   onChanged: (v) => setState(() => _pickup = v),
+                  onCustomPlaceChanged: (place) => setState(() {
+                    _pickupAnchor = place?.anchorName;
+                  }),
                 ),
                 const SizedBox(height: 14),
                 PlacePickerField(
                   label: 'Destination',
                   value: _destination,
                   icon: Icons.flag_outlined,
+                  allowCustom: true,
                   onChanged: (v) => setState(() => _destination = v),
+                  onCustomPlaceChanged: (place) => setState(() {
+                    _destinationAnchor = place?.anchorName;
+                  }),
                 ),
                 const SizedBox(height: 14),
                 AppDropdown(
@@ -135,7 +171,8 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                   value: _mode,
                   items: FareService.seatCapacity.keys.toList(),
                   onChanged: _onModeChanged,
-                  validator: (v) => v == null ? 'Choose a transportation type' : null,
+                  validator: (v) =>
+                      v == null ? 'Choose a transportation type' : null,
                 ),
                 if (_pickup != null && _pickup == _destination) ...[
                   const SizedBox(height: 12),
@@ -156,14 +193,17 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                     max: _capacity,
                     onChanged: (v) => setState(() {
                       _people = v;
-                      if (_freeSeats > _capacity - _people) _freeSeats = _capacity - _people;
+                      if (_freeSeats > _capacity - _people) {
+                        _freeSeats = _capacity - _people;
+                      }
                     }),
                   ),
                   const SizedBox(height: 12),
                   if (_perSeat && _capacity - _people > 0)
                     QuantityStepper(
                       label: 'Extra seats to keep free',
-                      helper: 'For more space. You pay for every seat you reserve.',
+                      helper:
+                          'For more space. You pay for every seat you reserve.',
                       icon: Icons.event_seat_outlined,
                       value: _freeSeats,
                       min: 0,
@@ -171,7 +211,9 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                       onChanged: (v) => setState(() => _freeSeats = v),
                     )
                   else if (!_perSeat)
-                    const NoteBox(text: 'This is a private trip. The whole vehicle is yours for one fare.'),
+                    const NoteBox(
+                        text:
+                            'This is a private trip. The whole vehicle is yours for one fare.'),
                 ],
                 const SectionTitle('When do you need it?'),
                 Row(
@@ -185,7 +227,9 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                         backgroundColor: AppColors.surface,
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: !_scheduled ? Colors.white : AppColors.textPrimary,
+                          color: !_scheduled
+                              ? Colors.white
+                              : AppColors.textPrimary,
                         ),
                         onSelected: (_) => setState(() => _scheduled = false),
                       ),
@@ -200,7 +244,8 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                         backgroundColor: AppColors.surface,
                         labelStyle: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: _scheduled ? Colors.white : AppColors.textPrimary,
+                          color:
+                              _scheduled ? Colors.white : AppColors.textPrimary,
                         ),
                         onSelected: (_) => setState(() => _scheduled = true),
                       ),
@@ -221,16 +266,22 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                   controller: _noteController,
                   maxLines: 2,
                   textInputAction: TextInputAction.done,
-                  decoration: appInputDecoration('Note for the driver (optional)', Icons.sticky_note_2_outlined),
+                  decoration: appInputDecoration(
+                      'Note for the driver (optional)',
+                      Icons.sticky_note_2_outlined),
                 ),
                 if (quote != null) ...[
                   const SectionTitle('Estimated fare'),
                   _EstimateCard(
                     mode: _mode!,
                     quote: quote,
-                    text: FareService.requestFareText(quote, _mode!, _people, _perSeat ? _freeSeats : 0),
+                    hasCustomPlace:
+                        _pickupAnchor != null || _destinationAnchor != null,
+                    text: FareService.requestFareText(
+                        quote, _mode!, _people, _perSeat ? _freeSeats : 0),
                     other: CurrencyService.secondary(
-                      FareService.requestTotal(quote, _mode!, _people, _perSeat ? _freeSeats : 0),
+                      FareService.requestTotal(
+                          quote, _mode!, _people, _perSeat ? _freeSeats : 0),
                       AppPreferences.instance.currency,
                     ),
                   ),
@@ -241,26 +292,33 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                       label: 'Pay in',
                       icon: Icons.payments_outlined,
                       value: CurrencyService.label(_payCurrency),
-                      items: [for (final c in CurrencyService.acceptedPayments) CurrencyService.label(c)],
-                      onChanged: (v) => setState(() => _payCurrency = (v ?? 'NLe').split(' ').first),
+                      items: [
+                        for (final c in CurrencyService.acceptedPayments)
+                          CurrencyService.label(c)
+                      ],
+                      onChanged: (v) => setState(
+                          () => _payCurrency = (v ?? 'NLe').split(' ').first),
                     ),
                     const SizedBox(height: 10),
                     _PaymentCard(
                       currency: _payCurrency,
-                      total: FareService.requestTotal(quote, _mode!, _people, _perSeat ? _freeSeats : 0),
+                      total: FareService.requestTotal(
+                          quote, _mode!, _people, _perSeat ? _freeSeats : 0),
                     ),
                     const SizedBox(height: 10),
                   ],
                   if (quote.isAvailable && drivers == 0)
                     NoteBox(
-                      text: 'No verified $driverType driver is registered yet. Your request will wait.',
+                      text:
+                          'No verified $driverType driver is registered yet. Your request will wait.',
                       icon: Icons.warning_amber_rounded,
                       color: AppColors.amber,
                       background: AppColors.amberTint,
                     )
                   else if (quote.isAvailable)
                     NoteBox(
-                      text: '$drivers verified $driverType driver(s) can receive this request.',
+                      text:
+                          '$drivers verified $driverType driver(s) can receive this request.',
                       icon: Icons.verified_outlined,
                       color: AppColors.success,
                       background: AppColors.successTint,
@@ -270,7 +328,8 @@ class _RequestTransportScreenState extends State<RequestTransportScreen> {
                 PrimaryButton(
                   label: 'Send request',
                   icon: Icons.send,
-                  onPressed: (quote != null && !quote.isAvailable) ? null : _submit,
+                  onPressed:
+                      (quote != null && !quote.isAvailable) ? null : _submit,
                 ),
               ],
             ),
@@ -291,7 +350,9 @@ class _PaymentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (total == null) {
-      return const NoteBox(text: 'This fare is agreed with the driver, so no amount can be shown yet.');
+      return const NoteBox(
+          text:
+              'This fare is agreed with the driver, so no amount can be shown yet.');
     }
     final amount = CurrencyService.amountIn(total!, currency);
     return AppCard(
@@ -308,11 +369,13 @@ class _PaymentCard extends StatelessWidget {
             currency == 'NLe'
                 ? 'Paid in leones.'
                 : 'Recorded in ${CurrencyService.shortName(currency)} ($currency) and not converted to leones by the app. Indicative rate: 1 $currency = NLe ${CurrencyService.rateFor(currency).toStringAsFixed(2)}.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+            style: TextStyle(
+                color: AppColors.textSecondary, fontSize: 13, height: 1.35),
           ),
           const SizedBox(height: 10),
           NoteBox(
-            text: 'Prices are set in leones (NLe). This prototype takes no real payment. Accepting foreign currency in Sierra Leone must follow Bank of Sierra Leone rules.',
+            text:
+                'Prices are set in leones (NLe). This prototype takes no real payment. Accepting foreign currency in Sierra Leone must follow Bank of Sierra Leone rules.',
             icon: Icons.gavel,
             color: AppColors.amber,
             background: AppColors.amberTint,
@@ -324,18 +387,26 @@ class _PaymentCard extends StatelessWidget {
 }
 
 class _EstimateCard extends StatelessWidget {
-  const _EstimateCard({required this.mode, required this.quote, required this.text, this.other});
+  const _EstimateCard({
+    required this.mode,
+    required this.quote,
+    required this.text,
+    this.other,
+    this.hasCustomPlace = false,
+  });
 
   final String mode;
   final FareQuote quote;
   final String text;
   final String? other;
+  final bool hasCustomPlace;
 
   @override
   Widget build(BuildContext context) {
     if (!quote.isAvailable) {
       return NoteBox(
-        text: '$mode: ${quote.unavailableReason}. Please choose another transportation type.',
+        text:
+            '$mode: ${quote.unavailableReason}. Please choose another transportation type.',
         icon: Icons.block,
         color: AppColors.red,
         background: AppColors.redTint,
@@ -345,17 +416,31 @@ class _EstimateCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          Text(text,
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          if (quote.distanceKm != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Approx. route distance: ${quote.distanceKm} km',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+          ],
           if (other != null) ...[
             const SizedBox(height: 4),
-            Text('Total $other', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+            Text('Total $other',
+                style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600)),
           ],
           const SizedBox(height: 8),
           SourceTag(quote.source),
           if (quote.isSimulated) ...[
             const SizedBox(height: 8),
             Text(
-              'This is a simulated estimate, not an official fare.',
+              hasCustomPlace
+                  ? 'Approximate estimate using listed route points plus ${FareService.customPlaceExtraKm} km per custom location. Not an official fare or live map distance.'
+                  : 'This is a simulated estimate, not an official fare.',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
           ],
