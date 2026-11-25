@@ -294,6 +294,16 @@ The first build may take a few minutes. The application opens with the animated 
 - Select a device.
 - Press F5.
 
+**Android Studio:**
+
+- Open the project folder containing `pubspec.yaml`.
+- Make sure the Flutter and Dart plugins are installed.
+- Select an Android emulator or connect a real Android device.
+- Click the Run button to launch the application.
+
+**Important:** This Flutter project can be developed and run independently in either Android Studio or Visual Studio Code. You do not need to use both IDEs at the same time. Both environments can run the application using the Flutter SDK.
+
+
 **Chrome:**
 
 If web support is configured, run:
