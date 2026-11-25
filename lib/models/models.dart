@@ -149,6 +149,7 @@ class FareQuote {
     required this.source,
     this.flat = false,
     this.unavailableReason,
+    this.distanceKm,
   });
 
   const FareQuote.unavailable(String reason)
@@ -156,13 +157,15 @@ class FareQuote {
         type = '',
         source = '',
         flat = false,
-        unavailableReason = reason;
+        unavailableReason = reason,
+        distanceKm = null;
 
   final double? amount;
   final String type;
   final String source;
   final bool flat;
   final String? unavailableReason;
+  final int? distanceKm;
 
   bool get isAvailable => unavailableReason == null;
   bool get isNegotiated => isAvailable && amount == null;

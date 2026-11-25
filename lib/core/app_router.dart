@@ -77,11 +77,20 @@ class AppRouter {
       case AppRoutes.guestFares:
         return _page(const FaresScreen(title: 'Browse fares'), settings);
       case AppRoutes.socialLogin:
-        final provider = settings.arguments is String ? settings.arguments! as String : 'Google';
+        final provider = settings.arguments is String
+            ? settings.arguments! as String
+            : 'Google';
         return _page(SocialLoginScreen(provider: provider), settings);
       case AppRoutes.placePicker:
-        final title = settings.arguments is String ? settings.arguments! as String : 'Choose a place';
-        return _page(PlacePickerScreen(title: title), settings);
+        final args = settings.arguments;
+        final title = args is String
+            ? args
+            : args is Map && args['title'] is String
+                ? args['title'] as String
+                : 'Choose a place';
+        final allowCustom = args is Map && args['allowCustom'] == true;
+        return _page(PlacePickerScreen(title: title, allowCustom: allowCustom),
+            settings);
 
       case AppRoutes.passenger:
         return _page(const PassengerShell(), settings);
@@ -104,27 +113,34 @@ class AppRouter {
       case AppRoutes.drivers:
         return _page(const DriversScreen(), settings);
       case AppRoutes.driverProfile:
-        final driverName = settings.arguments is String ? settings.arguments! as String : '';
+        final driverName =
+            settings.arguments is String ? settings.arguments! as String : '';
         return _page(DriverProfileScreen(username: driverName), settings);
       case AppRoutes.review:
-        final reviewId = settings.arguments is String ? settings.arguments! as String : '';
+        final reviewId =
+            settings.arguments is String ? settings.arguments! as String : '';
         return _page(ReviewScreen(requestId: reviewId), settings);
       case AppRoutes.settings:
         return _page(const SettingsScreen(), settings);
       case AppRoutes.requestTransport:
-        final mode = settings.arguments is String ? settings.arguments! as String : null;
+        final mode =
+            settings.arguments is String ? settings.arguments! as String : null;
         return _page(RequestTransportScreen(initialMode: mode), settings);
       case AppRoutes.tripMap:
-        final tripId = settings.arguments is String ? settings.arguments! as String : '';
+        final tripId =
+            settings.arguments is String ? settings.arguments! as String : '';
         return _page(TripMapScreen(requestId: tripId), settings);
       case AppRoutes.payment:
-        final payId = settings.arguments is String ? settings.arguments! as String : '';
+        final payId =
+            settings.arguments is String ? settings.arguments! as String : '';
         return _page(PaymentScreen(requestId: payId), settings);
       case AppRoutes.receipt:
-        final receiptId = settings.arguments is String ? settings.arguments! as String : '';
+        final receiptId =
+            settings.arguments is String ? settings.arguments! as String : '';
         return _page(ReceiptScreen(requestId: receiptId), settings);
       case AppRoutes.requestDetails:
-        final id = settings.arguments is String ? settings.arguments! as String : '';
+        final id =
+            settings.arguments is String ? settings.arguments! as String : '';
         return _page(RequestDetailsScreen(requestId: id), settings);
       case AppRoutes.reportFare:
         return _page(const ReportFareScreen(), settings);
@@ -138,15 +154,18 @@ class AppRouter {
         return _page(const AboutScreen(), settings);
 
       case AppRoutes.fareEdit:
-        final tariff = settings.arguments is Tariff ? settings.arguments! as Tariff : null;
+        final tariff =
+            settings.arguments is Tariff ? settings.arguments! as Tariff : null;
         return _page(FareEditScreen(tariff: tariff), settings);
       case AppRoutes.adminPassengers:
         return _page(const AdminPassengersScreen(), settings);
       case AppRoutes.adminRequests:
-        final filter = settings.arguments is String ? settings.arguments! as String : null;
+        final filter =
+            settings.arguments is String ? settings.arguments! as String : null;
         return _page(AdminRequestsScreen(initialFilter: filter), settings);
       case AppRoutes.reviewReport:
-        final id = settings.arguments is String ? settings.arguments! as String : '';
+        final id =
+            settings.arguments is String ? settings.arguments! as String : '';
         return _page(ReviewReportScreen(reportId: id), settings);
     }
     return _page(const WelcomeScreen(), settings);
@@ -159,7 +178,9 @@ class AppRouter {
     return null;
   }
 
-  static MaterialPageRoute<dynamic> _page(Widget screen, RouteSettings settings) {
-    return MaterialPageRoute<dynamic>(builder: (context) => screen, settings: settings);
+  static MaterialPageRoute<dynamic> _page(
+      Widget screen, RouteSettings settings) {
+    return MaterialPageRoute<dynamic>(
+        builder: (context) => screen, settings: settings);
   }
 }

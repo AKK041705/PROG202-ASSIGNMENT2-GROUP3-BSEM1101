@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/app_routes.dart';
 import '../core/ui_helpers.dart';
+import '../data/place_data.dart';
 
 /// A form field that opens the place search screen when tapped and shows the
 /// chosen place. (A read-only TextFormField, so the whole field is tappable.)
@@ -14,6 +15,8 @@ class PlacePickerField extends StatefulWidget {
     required this.onChanged,
     this.icon = Icons.place_outlined,
     this.required = true,
+    this.allowCustom = false,
+    this.onCustomPlaceChanged,
   });
 
   final String label;
@@ -21,6 +24,8 @@ class PlacePickerField extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final IconData icon;
   final bool required;
+  final bool allowCustom;
+  final ValueChanged<CustomPlaceSelection?>? onCustomPlaceChanged;
 
   @override
   State<PlacePickerField> createState() => _PlacePickerFieldState();
@@ -50,11 +55,19 @@ class _PlacePickerFieldState extends State<PlacePickerField> {
     final picked = await Navigator.pushNamed(
       context,
       AppRoutes.placePicker,
-      arguments: widget.label,
+      arguments: {
+        'title': widget.label,
+        'allowCustom': widget.allowCustom,
+      },
     );
     if (picked is String && mounted) {
       _controller.text = picked;
       widget.onChanged(picked);
+      widget.onCustomPlaceChanged?.call(null);
+    } else if (picked is CustomPlaceSelection && mounted) {
+      _controller.text = picked.name;
+      widget.onChanged(picked.name);
+      widget.onCustomPlaceChanged?.call(picked);
     }
   }
 
@@ -72,7 +85,9 @@ class _PlacePickerFieldState extends State<PlacePickerField> {
         return null;
       },
       style: TextStyle(fontSize: 16, color: AppColors.textPrimary),
-      decoration: appInputDecoration(widget.label, widget.icon, hint: 'Tap to choose').copyWith(
+      decoration:
+          appInputDecoration(widget.label, widget.icon, hint: 'Tap to choose')
+              .copyWith(
         suffixIcon: Icon(Icons.search, color: AppColors.textSecondary),
       ),
     );

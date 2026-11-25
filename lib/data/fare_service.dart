@@ -66,7 +66,13 @@ class FareService {
     'Bus',
   ];
 
-  static const List<String> adminFareModes = ['Okada', 'Kekeh', 'Poda-poda', 'Bus'];
+  static const List<String> adminFareModes = [
+    'Okada',
+    'Kekeh',
+    'Poda-poda',
+    'Bus'
+  ];
+  static const int customPlaceExtraKm = 3;
 
   static final Map<String, Place> _byName = {
     for (final place in kPlaces) place.name: place,
@@ -79,10 +85,10 @@ class FareService {
 
   static bool isPerPassenger(String mode) => perPassengerModes.contains(mode);
 
-  static Place? placeByName(String? name) => name == null ? null : _byName[name];
+  static Place? placeByName(String? name) =>
+      name == null ? null : _byName[name];
 
-  static String corridorOf(Place p) =>
-      p.isWesternArea ? 'Western' : p.area;
+  static String corridorOf(Place p) => p.isWesternArea ? 'Western' : p.area;
 
   /// Simulated road distance between two places.
   static int distanceKm(String a, String b) {
@@ -92,10 +98,11 @@ class FareService {
     return pa.km + pb.km; // different roads: travel via Freetown
   }
 
-  static String? unavailableReason(String mode, String a, String b) {
+  static String? unavailableReason(String mode, String a, String b,
+      {int? routeDistanceKm}) {
     final pa = _byName[a]!;
     final pb = _byName[b]!;
-    final km = distanceKm(a, b);
+    final km = routeDistanceKm ?? distanceKm(a, b);
     if (mode == 'Kekeh' && !(pa.isWesternArea && pb.isWesternArea)) {
       return 'Kekeh do not run in the provinces';
     }
@@ -108,14 +115,16 @@ class FareService {
     return null;
   }
 
-  static Tariff? _routeTariff(List<Tariff> tariffs, String mode, String a, String b) {
+  static Tariff? _routeTariff(
+      List<Tariff> tariffs, String mode, String a, String b) {
     for (final t in tariffs) {
       if (t.mode == mode && t.matches(a, b)) return t;
     }
     return null;
   }
 
-  static Tariff? _publishedTariff(List<Tariff> tariffs, String mode, String a, String b) {
+  static Tariff? _publishedTariff(
+      List<Tariff> tariffs, String mode, String a, String b) {
     final route = _routeTariff(tariffs, mode, a, b);
     if (route != null) return route;
     if (_byName[a]!.area == 'City' && _byName[b]!.area == 'City') {
@@ -127,8 +136,29 @@ class FareService {
   }
 
   /// Finds the fare: published fare first, otherwise a simulated estimate.
-  static FareQuote quote(List<Tariff> tariffs, String mode, String a, String b) {
-    final published = _publishedTariff(tariffs, mode, a, b);
+  static FareQuote quote(
+    List<Tariff> tariffs,
+    String mode,
+    String a,
+    String b, {
+    String? pickupAnchor,
+    String? destinationAnchor,
+  }) {
+    final customPickup = !_byName.containsKey(a);
+    final customDestination = !_byName.containsKey(b);
+    final resolvedPickup = customPickup ? pickupAnchor : a;
+    final resolvedDestination = customDestination ? destinationAnchor : b;
+    if (resolvedPickup == null ||
+        resolvedDestination == null ||
+        !_byName.containsKey(resolvedPickup) ||
+        !_byName.containsKey(resolvedDestination)) {
+      return const FareQuote.unavailable(
+          'Choose a listed location to estimate the custom place distance');
+    }
+
+    final hasCustomPlace = customPickup || customDestination;
+    final published =
+        hasCustomPlace ? null : _publishedTariff(tariffs, mode, a, b);
     if (published != null) {
       return FareQuote(
         amount: published.fare,
@@ -137,15 +167,24 @@ class FareService {
         flat: published.isFlat,
       );
     }
-    final reason = unavailableReason(mode, a, b);
+    final distance = distanceKm(resolvedPickup, resolvedDestination) +
+        (customPickup ? customPlaceExtraKm : 0) +
+        (customDestination ? customPlaceExtraKm : 0);
+    final reason = unavailableReason(
+      mode,
+      resolvedPickup,
+      resolvedDestination,
+      routeDistanceKm: distance,
+    );
     if (reason != null) return FareQuote.unavailable(reason);
     final rule = _rates[mode]!;
-    final raw = rule[0] + rule[1] * distanceKm(a, b);
+    final raw = rule[0] + rule[1] * distance;
     final amount = (raw * 2).roundToDouble() / 2;
     return FareQuote(
       amount: amount,
       type: _fareTypes[mode] ?? 'Per passenger',
       source: 'Simulated estimate',
+      distanceKm: distance,
     );
   }
 
@@ -159,7 +198,8 @@ class FareService {
   }
 
   /// The total in NLe for a request, or null when the fare is not fixed.
-  static double? requestTotal(FareQuote q, String mode, int people, int freeSeats) {
+  static double? requestTotal(
+      FareQuote q, String mode, int people, int freeSeats) {
     if (!q.isAvailable || q.amount == null) return null;
     if (isPerPassenger(mode)) return q.amount! * (people + freeSeats);
     return q.amount;

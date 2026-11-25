@@ -60,6 +60,7 @@ The main objectives of the project are to:
 - Rejection of made-up phone numbers such as `0000000000`.
 - Country detection from international calling codes.
 - Place search screen for pickup and destination selection.
+- Custom pickup or destination entry when a place is not listed. The fare uses the nearest listed route point plus 3 km per custom location; this is an approximation, not live map routing.
 - Fare list and side-by-side fare comparison for okada, kekeh, taxi, poda-poda and bus.
 - Fare types and source information.
 - Settings for light mode, dark mode, accent colour and currency.
