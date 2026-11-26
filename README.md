@@ -57,7 +57,7 @@ The main objectives of the project are to:
 - Registration and login interfaces for passengers and drivers.
 - Form validation for user inputs.
 - Phone number checks for Sierra Leonean and international numbers.
-- Rejection of made-up phone numbers such as `0000000000`.
+- Rejection of made-up phone numbers such as `000000000`.
 - Country detection from international calling codes.
 - Place search screen for pickup and destination selection.
 - Custom pickup or destination entry when a place is not listed. The fare uses the nearest listed route point plus 3 km per custom location; this is an approximation, not live map routing.
